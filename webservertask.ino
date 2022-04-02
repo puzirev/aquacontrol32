@@ -188,18 +188,6 @@ void webServerTask ( void * pvParameters ) {
       return request->send( response );
     }
 
-    else if ( request->hasArg( "oledcontrast" ) ) {
-      if ( !xOledTaskHandle ) return request->send( 501, HEADER_HTML, NOT_PRESENT_ERROR_501 );
-      AsyncResponseStream *response = request->beginResponseStream( HEADER_HTML );
-      response->printf( "%i", oledContrast );
-      return request->send( response );
-    }
-
-    else if ( request->hasArg( "oledorientation" ) ) {
-      if ( !xOledTaskHandle ) return request->send( 501, HEADER_HTML, NOT_PRESENT_ERROR_501 );
-      return request->send( 200, HEADER_HTML, oledOrientation == OLED_ORIENTATION_NORMAL ? "normal" : "upsidedown" );
-    }
-
     else if ( request->hasArg( "pwmdepth" ) ) {
       AsyncResponseStream *response = request->beginResponseStream( HEADER_HTML );
       response->printf( "%i", ledcNumberOfBits );
@@ -277,18 +265,6 @@ void webServerTask ( void * pvParameters ) {
       return request->send( response );
     }
 
-    else if ( request->hasArg( "tftbrightness" ) ) {
-      if ( !xTftTaskHandle ) return request->send( 501, HEADER_HTML, NOT_PRESENT_ERROR_501 );
-      AsyncResponseStream *response = request->beginResponseStream( HEADER_HTML );
-      response->printf( "%.2f", tftBrightness );
-      return request->send( response );
-    }
-
-    else if ( request->hasArg( "tftorientation" ) ) {
-      if ( !xTftTaskHandle ) return request->send( 501, HEADER_HTML, NOT_PRESENT_ERROR_501 );
-      return request->send( 200, HEADER_HTML, ( tftOrientation == TFT_ORIENTATION_NORMAL ) ? "normal" : "upsidedown" );
-    }
-
     else if ( request->hasArg( "timezone" ) ) return request->send( 200, HEADER_HTML, getenv( "TZ" ) );
 
     else if ( request->hasArg( "version" ) ) return request->send( 200, HEADER_HTML, sketchVersion );
@@ -362,15 +338,6 @@ void webServerTask ( void * pvParameters ) {
       return request->requestAuthentication();
     }
 
-    else if (request->hasArg("tftstate") && request->arg("tftstate" ).equals("forcetft")) {
-      if (xTftTaskHandle) return request->send(400, HEADER_HTML, "ERROR TFT already started");
-      if (!startTFT()) {
-        ESP_LOGE(TAG, "Could not start TFT task.");
-        return request->send(400, HEADER_HTML, "ERROR starting TFT (OUT of MEM?)");
-      }
-      return request->send(200, HEADER_HTML, "Started TFT");
-    }
-
     else if ( request->hasArg( "hostname" ) ) {
       if ( !setupMDNS( request->arg( "hostname" ).c_str() ) ) {
         char wrongName[81];
@@ -405,36 +372,6 @@ void webServerTask ( void * pvParameters ) {
 
     else if ( request->hasArg( "loadtimers" ) ) {
       return request->send( 200, HEADER_HTML, defaultTimersLoaded() ? "Timers loaded." : "Not loaded." );
-    }
-
-    else if ( request->hasArg( "oledcontrast" ) ) {
-      request->arg( "oledcontrast" );
-      uint8_t contrast = request->arg( "oledcontrast" ).toInt();
-      if ( contrast < 0 || contrast > 15 ) return request->send( 400, HEADER_HTML, "Invalid contrast." );
-      oledContrast = contrast;
-      OLED.setContrast( contrast << 4 );
-      preferences.putUInt( "oledcontrast", oledContrast );
-      AsyncResponseStream *response = request->beginResponseStream( HEADER_HTML );
-      response->printf( "%i", contrast );
-      return request->send( response );
-    }
-
-    else if (request->hasArg( "oledorientation")) {
-      if (request->arg("oledorientation").equals("upsidedown")) {
-        oledOrientation = OLED_ORIENTATION_UPSIDEDOWN;
-      }
-      else if (request->arg("oledorientation").equals("normal")) {
-        oledOrientation = OLED_ORIENTATION_NORMAL;
-      }
-      else {
-        return request->send( 400, HEADER_HTML, "Invalid orientation" );
-      }
-      OLED.end();
-      OLED.init();
-      OLED.setContrast( oledContrast << 0x04 );
-      oledOrientation == OLED_ORIENTATION_NORMAL ? OLED.normalDisplay() : OLED.flipScreenVertically();
-      preferences.putString( "oledorientation", ( oledOrientation == OLED_ORIENTATION_NORMAL ? "normal" : "upsidedown" ) );
-      return request->send( 200, HEADER_HTML, preferences.getString( "oledorientation" ) );
     }
 
     else if ( request->hasArg( "password" ) ) {
@@ -524,31 +461,6 @@ void webServerTask ( void * pvParameters ) {
     {
       logger.rescanSensors();
       return request->send( 200, HEADER_HTML );
-    }
-
-    else if ( request->hasArg( "tftorientation" ) )
-    {
-      if (request->arg( "tftorientation" ).equals("normal")) tftOrientation = TFT_ORIENTATION_NORMAL;
-      else if (request->arg( "tftorientation" ).equals("upsidedown")) tftOrientation = TFT_ORIENTATION_UPSIDEDOWN;
-      else return request->send( 400, HEADER_HTML, "Invalid tft orientation." );
-
-      tft.setRotation( tftOrientation );
-      tftClearScreen = true;
-      preferences.putString( "tftorientation", ( tftOrientation == TFT_ORIENTATION_NORMAL ) ? "normal" : "upsidedown" );
-      AsyncResponseStream *response = request->beginResponseStream( HEADER_HTML );
-      response->printf( "%s", preferences.getString( "tftorientation", "" ).c_str() );
-      return request->send( response );
-    }
-
-    else if ( request->hasArg( "tftbrightness" ) )
-    {
-      float brightness = request->arg( "tftbrightness" ).toFloat();
-      if ( brightness < 0 || brightness > 100 ) return request->send( 400, HEADER_HTML, "Invalid tft brightness." );
-      tftBrightness = brightness;
-      preferences.putFloat( "tftbrightness", brightness );
-      AsyncResponseStream *response = request->beginResponseStream( HEADER_HTML );
-      response->printf( "%.2f", tftBrightness );
-      return request->send( response );
     }
 
     else if ( request->hasArg( "timezone" ) )

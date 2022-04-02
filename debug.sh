@@ -15,10 +15,10 @@ currentVersion+="!debug"
 echo "const char * sketchVersion = \"$currentVersion\";" > gitTagVersion.h
 echo -e "Compiling and flashing aquacontrol32 version: \e[36m$currentVersion\e[0m"
 ~/arduino-1.8.12/arduino \
-  --board espressif:esp32:esp32 \
+  --board esp32:esp32:esp32 \
   --pref custom_DebugLevel=esp32_info \
   --port /dev/ttyUSB0 \
-  --pref upload.speed=921600 \
+  --pref upload.speed=115200 \
   --preserve-temp-files \
   --pref build.path=temp \
   --pref build.partitions=default_ffat \

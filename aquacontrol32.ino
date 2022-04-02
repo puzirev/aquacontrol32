@@ -1,16 +1,12 @@
 #include <rom/rtc.h>               /* should be installed together with ESP32 Arduino install */
 #include <list>                    /* should be installed together with ESP32 Arduino install */
-#include <SPI.h>                   /* should be installed together with ESP32 Arduino install */
+//#include <SPI.h>                   /* should be installed together with ESP32 Arduino install */
 #include <Wire.h>                  /* should be installed together with ESP32 Arduino install */
 #include <FS.h>                    /* should be installed together with ESP32 Arduino install */
 #include <FFat.h>                  /* should be installed together with ESP32 Arduino install */
 #include <ESPmDNS.h>               /* should be installed together with ESP32 Arduino install */
 #include <Preferences.h>           /* should be installed together with ESP32 Arduino install */
 #include <WiFi.h>                  /* should be installed together with ESP32 Arduino install */
-#include <Adafruit_ILI9341.h>      /* Install 1.5.4 via 'Manage Libraries' in Arduino IDE */
-#include <Adafruit_GFX.h>          /* Install 1.7.5 via 'Manage Libraries' in Arduino IDE */
-#include <SSD1306.h>               /* Install 4.0.0 via 'Manage Libraries' in Arduino IDE -> https://github.com/ThingPulse/esp8266-oled-ssd1306 */
-#include <XPT2046_Touchscreen.h>   /* Install 1.3 via 'Manage Libraries' in Arduino IDE */
 #include <AsyncTCP.h>              /* Reports as 1.0.3 https://github.com/me-no-dev/AsyncTCP */
 #include <ESPAsyncWebServer.h>     /* Reports as 1.2.3 https://github.com/me-no-dev/ESPAsyncWebServer */
 #include <OneWire.h>               /* Use this version instead of the standard Arduino library: https://github.com/stickbreaker/OneWire */
@@ -19,8 +15,8 @@
 #include <Task.h>                  /* Install 1.0.0 https://github.com/CelliesProjects/Task */
 #include "ledState.h"
 
-const char * wifi_network = "";                          /* Change your WiFi username and password before compiling! */
-const char * wifi_password = "";                         /* Or use https://github.com/EspressifApp/EsptouchForAndroid/releases/latest for Android phones */
+const char * wifi_network = "97flatinet";                /* Change your WiFi username and password before compiling! */
+const char * wifi_password = "FireWind";                 /* Or use https://github.com/EspressifApp/EsptouchForAndroid/releases/latest for Android phones */
                                                          /* Or use https://github.com/EspressifApp/EsptouchForIOS/releases/tag/v1.0.0 for iPhones */
 
 #define SET_STATIC_IP              false                 /* If SET_STATIC_IP is set to true then STATIC_IP, GATEWAY, SUBNET and PRIMARY_DNS have to be set to some sane values */
@@ -41,36 +37,9 @@ const char * sketchVersion = "v1.6.8";
 #endif
 
 /**************************************************************************
-       defines for OLED display orientation
-**************************************************************************/
-#define OLED_ORIENTATION_NORMAL            1
-#define OLED_ORIENTATION_UPSIDEDOWN        2
-
-
-/**************************************************************************
-       defines for TFT display orientation
-**************************************************************************/
-#define TFT_ORIENTATION_NORMAL             1
-#define TFT_ORIENTATION_UPSIDEDOWN         3
-
-
-/**************************************************************************
        update frequency for LEDS in Hz
 **************************************************************************/
 #define UPDATE_FREQ_LEDS                   100
-
-
-/**************************************************************************
-       update frequency for TFT display in Hz
-**************************************************************************/
-#define UPDATE_FREQ_TFT                    5
-
-
-/**************************************************************************
-       update frequency for OLED display in Hz
-**************************************************************************/
-#define UPDATE_FREQ_OLED                   4
-
 
 /**************************************************************************
        number of bit precission for LEDC timer
@@ -118,12 +87,6 @@ FFatSensor              logger;
 
 moonPhase               moonPhase;
 
-XPT2046_Touchscreen     touch( TOUCH_CS_PIN, TOUCH_IRQ_PIN );
-
-Adafruit_ILI9341        tft = Adafruit_ILI9341( SPI_TFT_CS_PIN, SPI_TFT_DC_PIN, SPI_TFT_RST_PIN );
-
-SSD1306                 OLED( OLED_ADDRESS, I2C_SDA_PIN, I2C_SCL_PIN );
-
 Preferences             preferences;
 
 /**************************************************************************
@@ -152,26 +115,17 @@ const char* defaultTimerFile   = "/default.aqu";
 
 /* task priorities */
 const uint8_t dimmerTaskPriority       = 8;
-const uint8_t tftTaskPriority          = 6;
 const uint8_t ntpTaskPriority          = 5;
+#if 0
+const uint8_t tftTaskPriority          = 6;
 const uint8_t oledTaskPriority         = 4;
+#endif
 const uint8_t wifiTaskPriority         = 3;
 const uint8_t webserverTaskPriority    = 1;
 
 /* used esp32 HW timers */
 const uint8_t HWTIMER0_SENSOR          = 0;
 const uint8_t HWTIMER1_MOON            = 1;
-
-/* TFT related */
-const uint16_t TFT_BACK_COLOR          = ILI9341_MAROON;
-const uint16_t TFT_TEXT_COLOR          = ILI9341_WHITE;
-const uint16_t TFT_DATE_COLOR          = ILI9341_WHITE;
-const uint16_t TFT_TEMP_COLOR          = ILI9341_WHITE;
-const uint8_t  TFT_BACKLIGHT_BITDEPTH  = 16;               /*min 11 bits, max 16 bits */
-const uint8_t  TFT_BACKLIGHT_CHANNEL   = NUMBER_OF_CHANNELS;
-const uint16_t TFT_BUTTON_WIDTH        = 100;
-const uint16_t TFT_BUTTON_HEIGHT       = 40;
-const uint16_t TFT_BACKLIGHT_MAXPWM    = ( 0x00000001 << TFT_BACKLIGHT_BITDEPTH ) - 1;
 
 /**************************************************************************
        start of global variables
@@ -181,8 +135,6 @@ channelData_t           channel[NUMBER_OF_CHANNELS];
 moonData_t              moonData;
 
 TaskHandle_t            xDimmerTaskHandle            = NULL;
-TaskHandle_t            xTftTaskHandle               = NULL;
-TaskHandle_t            xOledTaskHandle              = NULL;
 
 //Boot time is saved
 timeval                 systemStart;
@@ -193,19 +145,11 @@ double                  ledcActualFrequency;
 uint16_t                ledcMaxValue;
 uint8_t                 ledcNumberOfBits;
 
-float                   tftBrightness                 = 80;                         /* in percent */
-uint8_t                 tftOrientation                = TFT_ORIENTATION_NORMAL;
-
-uint8_t                 oledContrast;                                               /* 0 .. 15 */
-uint8_t                 oledOrientation               = OLED_ORIENTATION_NORMAL;
-
 /*****************************************************************************************
        end of global variables
 *****************************************************************************************/
 
 /* forward declarations  */
-void tftTask( void * pvParameters );
-void oledTask( void * pvParameters );
 void wifiTask( void * pvParameters );
 
 /* global functions */
@@ -252,18 +196,6 @@ const char * threeDigitPercentage( char * buffer, const uint8_t &bufferSize, con
   return buffer;
 }
 
-const TaskHandle_t startTFT() {
-  xTaskCreatePinnedToCore(
-    tftTask,                        /* Function to implement the task */
-    "tftTask",                      /* Name of the task */
-    4000,                           /* Stack size in words */
-    NULL,                           /* Task input parameter */
-    tftTaskPriority,                /* Priority of the task */
-    &xTftTaskHandle,                /* Task handle. */
-    1);
-  return xTftTaskHandle;
-}
-
 void setup()
 {
   pinMode( LED0_PIN, OUTPUT );
@@ -271,7 +203,6 @@ void setup()
   pinMode( LED2_PIN, OUTPUT );
   pinMode( LED3_PIN, OUTPUT );
   pinMode( LED4_PIN, OUTPUT );
-  pinMode( TFT_BACKLIGHT_PIN, OUTPUT );
 
   pinMode( I2C_SCL_PIN, INPUT_PULLUP );
   pinMode( I2C_SDA_PIN, INPUT_PULLUP );
@@ -293,54 +224,10 @@ void setup()
 
   preferences.begin( "aquacontrol32", false );
 
-  SPI.begin( SPI_SCK_PIN, SPI_MISO_PIN, SPI_MOSI_PIN );
-
-  tft.begin( TFT_SPI_CLOCK );
-
-  if ( TFT_HAS_NO_MISO || tft.readcommand8( ILI9341_RDSELFDIAG ) == 0xE0 ) {
-    if (!startTFT()) ESP_LOGE(TAG, "Could not start TFT task.");
-  }
-  else ESP_LOGI( TAG, "No ILI9341 found" );
-
-  Wire.begin( I2C_SDA_PIN, I2C_SCL_PIN, 400000 );
-  Wire.beginTransmission( OLED_ADDRESS );
-  uint8_t error = Wire.endTransmission();
-  if ( error ) ESP_LOGI( TAG, "No SSD1306 OLED found." );
-  else {
-    OLED.init();
-    ESP_LOGI( TAG, "Found SSD1306 OLED on I2C at address 0x%x.", OLED_ADDRESS );
-    if ( preferences.getString( "oledorientation", "normal" ).equals( "upsidedown" ) ) {
-      oledOrientation = OLED_ORIENTATION_UPSIDEDOWN;
-      OLED.flipScreenVertically();
-    }
-    oledContrast = preferences.getUInt( "oledcontrast", 15 );
-    OLED.setContrast( oledContrast << 0x04 );
-    OLED.setTextAlignment( TEXT_ALIGN_CENTER );
-    OLED.setFont( ArialMT_Plain_16 );
-    OLED.drawString( 64, 0, F( "AquaControl32" ) );
-    OLED.display();
-
-    xTaskCreatePinnedToCore(
-      oledTask,                       /* Function to implement the task */
-      "oledTask",                     /* Name of the task */
-      3000,                           /* Stack size in words */
-      NULL,                           /* Task input parameter */
-      oledTaskPriority,               /* Priority of the task */
-      &xOledTaskHandle,               /* Task handle. */
-      1);                             /* Core where the task should run */
-  }
-
   /* check if a ffat partition is defined and halt the system if it is not defined*/
   if (!esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, "ffat")) {
     ESP_LOGE( TAG, "No FFat partition defined. Halting.\nCheck 'Tools>Partition Scheme' in the Arduino IDE and select a FFat partition." );
     const char * noffatStr = "No FFat found...";
-    if ( xTftTaskHandle ) {
-      tft.println( noffatStr );
-    }
-    if ( xOledTaskHandle ) {
-      OLED.drawString( 64, 20, noffatStr );
-      OLED.display();
-    }
     while (true) delay(1000); /* system is halted */
   }
 
@@ -351,32 +238,14 @@ void setup()
   /* partition is present, but does not mount so now we just format it */
   else {
     const char * formatStr = "Formatting...";
-    if ( xTftTaskHandle ) {
-      tft.println( formatStr );
-    }
-    if ( xOledTaskHandle ) {
-      OLED.drawString( 64, 20, formatStr );
-      OLED.display();
-    }
     ESP_LOGI( TAG, "%s", formatStr );
     if (!FFat.format( true, (char*)"ffat" ) || !FFat.begin()) {
       ESP_LOGE( TAG, "FFat error while formatting. Halting." );
       const char * errorffatStr = "FFat error.";
-      if ( xTftTaskHandle ) {
-        tft.println( errorffatStr );
-      }
-      if ( xOledTaskHandle ) {
-        OLED.drawString( 64, 20, errorffatStr );
-        OLED.display();
-      }
       while (true) delay(1000); /* system is halted */;
     }
   }
 
-  if ( xOledTaskHandle ) {
-    OLED.drawString( 64, 40, "Connecting..." );
-    OLED.display();
-  }
   xTaskCreatePinnedToCore(
     wifiTask,                       /* Function to implement the task */
     "wifiTask",                     /* Name of the task */

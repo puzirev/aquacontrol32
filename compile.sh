@@ -13,8 +13,8 @@ else
 fi
 echo "const char * sketchVersion = \"$currentVersion\";" > gitTagVersion.h
 echo -e "Compiling aquacontrol32 version: \e[36m$currentVersion\e[0m"
-~/arduino-1.8.12/arduino \
-  --board espressif:esp32:mhetesp32minikit \
+../arduino-1.8.19/arduino \
+  --board esp32:esp32:esp32 \
   --pref custom_DebugLevel=esp32_none \
   --port /dev/ttyUSB0 \
   --pref upload.speed=921600 \

@@ -12,18 +12,22 @@ void wifiTask( void * pvParameters ) {
   /* trying last accesspoint */
   else WiFi.begin();
 
+#if 0
   if ( xTftTaskHandle ) {
     tft.setTextColor( TFT_TEXT_COLOR , TFT_BACK_COLOR );
     tft.println( "Connecting WiFi");
   }
+#endif
 
   WiFi.waitForConnectResult();
 
   if ( WiFi.status() != WL_CONNECTED && ( WiFi.status() != WL_CONNECT_FAILED ) ) {
+#if 0
     if ( xTftTaskHandle ) {
       tft.println( "\nNo WiFi connection.\nWaiting for SmartConfig." );
       tft.invertDisplay( true );
     }
+#endif
 
     WiFi.mode( WIFI_AP_STA );
     WiFi.beginSmartConfig();
@@ -35,6 +39,7 @@ void wifiTask( void * pvParameters ) {
 
     while ( !WiFi.smartConfigDone() && time( NULL ) < END_TIME ) {
       char remainingSCTime[12];
+#if 0
       if ( xOledTaskHandle ) {
         OLED.clear();
         OLED.setFont( ArialMT_Plain_10 );
@@ -44,13 +49,13 @@ void wifiTask( void * pvParameters ) {
         OLED.invertDisplay();
         OLED.display();
       }
-
       if ( xTftTaskHandle ) {
         tft.setCursor( 70, 100 );
         tft.print( END_TIME - time( NULL ) );
         tft.println( " seconds left. " );
       }
       else
+#endif
         digitalWrite( LED_BUILTIN, !gpio_get_level( gpio_num_t( LED_BUILTIN ) ) );
       vTaskDelay( 500 / portTICK_PERIOD_MS );
     }
@@ -58,7 +63,9 @@ void wifiTask( void * pvParameters ) {
     if ( !WiFi.smartConfigDone() )
       ESP.restart();
 
+#if 0
     if ( !xTftTaskHandle )
+#endif
       digitalWrite( LED_BUILTIN, LOW );
   }
 
@@ -68,12 +75,14 @@ void wifiTask( void * pvParameters ) {
   WiFi.onEvent( WiFiEvent );
   ESP_LOGI( TAG, "WiFi connected to '%s' %s %s",
             WiFi.SSID().c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str() );
+#if 0
   if ( xTftTaskHandle ) {
     tft.invertDisplay( false );
     tft.printf( "WiFi connected.\nIP: %s\nmac: %s\n", WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str() );
   }
   if ( xOledTaskHandle )
     OLED.normalDisplay();
+#endif
   strncpy( hostName, preferences.getString( "hostname", "" ).c_str(), sizeof( hostName ) );
 
   if ( hostName[0] ==  0 ) {

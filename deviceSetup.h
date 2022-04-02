@@ -2,7 +2,7 @@
        country code for ntp server selection
        https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
 **************************************************************************/
-#define COUNTRY_CODE_ISO_3166              "nl"
+#define COUNTRY_CODE_ISO_3166              "ru"
 
 
 /**************************************************************************
@@ -11,6 +11,7 @@
 #define NUMBER_OF_SENSORS                  3
 
 
+#if 0
 /**************************************************************************
        OLED I2C address
 **************************************************************************/
@@ -37,7 +38,7 @@
        TFT SPI CLOCK SPEED (DEFAULT = 10MHz)
 **************************************************************************/
 #define TFT_SPI_CLOCK                      10 * 1000 * 1000
-
+#endif
 
 /**************************************************************************
        Some tft/sdcard breakout boards have their touch coordinates reversed.
@@ -49,4 +50,4 @@
 /**************************************************************************
        Set to true to use the flash and compile scripts.
 **************************************************************************/
-#define GIT_TAG                             false
+#define GIT_TAG                             true
