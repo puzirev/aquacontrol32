@@ -15,9 +15,11 @@
 #include <Task.h>                  /* Install 1.0.0 https://github.com/CelliesProjects/Task */
 #include "ledState.h"
 
-const char * wifi_network = "97flatinet";                /* Change your WiFi username and password before compiling! */
-const char * wifi_password = "FireWind";                 /* Or use https://github.com/EspressifApp/EsptouchForAndroid/releases/latest for Android phones */
-                                                         /* Or use https://github.com/EspressifApp/EsptouchForIOS/releases/tag/v1.0.0 for iPhones */
+const char * wifi_network = "sharrsp";                /* Change your WiFi username and password before compiling! */
+const char * wifi_password = "19533591";                 /* Or use https://github.com/EspressifApp/EsptouchForAndroid/releases/latest for Android phones */
+//const char * wifi_network = "97flatinet";                /* Change your WiFi username and password before compiling! */
+//const char * wifi_password = "FireWind";                 /* Or use https://github.com/EspressifApp/EsptouchForAndroid/releases/latest for Android phones */
+                                                           /* Or use https://github.com/EspressifApp/EsptouchForIOS/releases/tag/v1.0.0 for iPhones */
 
 #define SET_STATIC_IP              false                 /* If SET_STATIC_IP is set to true then STATIC_IP, GATEWAY, SUBNET and PRIMARY_DNS have to be set to some sane values */
 

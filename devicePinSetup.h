@@ -9,11 +9,11 @@
 /**************************************************************************
        LED pin numbers
 **************************************************************************/
-#define LED0_PIN                           22
-#define LED1_PIN                           21
-#define LED2_PIN                           17
-#define LED3_PIN                           16
-#define LED4_PIN                           26
+#define LED0_PIN                           16
+#define LED1_PIN                           17
+#define LED2_PIN                           5
+#define LED3_PIN                           18
+#define LED4_PIN                           19
 
 #if 0
 /**************************************************************************
