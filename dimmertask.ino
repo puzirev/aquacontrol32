@@ -56,7 +56,7 @@ void IRAM_ATTR dimmerTask ( void * pvParameters )
   while (1) {
     if ( moonUpdate ) {
       moonData = moonPhase.getPhase();
-      ESP_LOGI( TAG, "Moon phase updated: %i degrees %.6f%% lit", moonData.angle, moonData.percentLit * 100 );
+      ESP_LOGI( TAG, "Moon phase updated: %i degrees %.6f%% lit", moonData.angle, moonData.percentLit * 100.0f );
       portENTER_CRITICAL(&timerMux);
       moonUpdate = false;
       portEXIT_CRITICAL(&timerMux);
@@ -64,8 +64,8 @@ void IRAM_ATTR dimmerTask ( void * pvParameters )
 
     lightState_t currentState = leds.state();
     if ( currentState != LIGHTS_AUTO ) {
-      uint16_t pwmValue = ( currentState == LIGHTS_OFF ) ? 0 : ledcMaxValue;
-      float percentage = ( pwmValue == 0 ) ? 0 : 100;
+      uint16_t pwmValue = ( currentState == LIGHTS_OFF ) ? ledcMaxValue : 0;
+      float percentage = ( pwmValue == 0 ) ? 100.0f : 0.0f;
       for ( uint8_t num = 0; num < NUMBER_OF_CHANNELS; num++ ) {
         channel[num].currentPercentage = percentage;
         ledcWrite( num, pwmValue );
@@ -111,11 +111,11 @@ void IRAM_ATTR dimmerTask ( void * pvParameters )
 
           /* done, set the channel */
           channel[num].currentPercentage = newPercentage;
-          ledcWrite( num, mapFloat( channel[num].currentPercentage,
-                                    0,
-                                    100,
-                                    0,
-                                    ledcMaxValue ) );
+          ledcWrite( num, invertFloat(mapFloat( channel[num].currentPercentage,
+                                    0.0f,
+                                    100.0f,
+                                    0.0f,
+                                    ledcMaxValue ), 0.0f, ledcMaxValue) );
         }
       }
     }

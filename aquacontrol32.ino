@@ -159,6 +159,10 @@ inline float mapFloat( const float &x, const float &in_min, const float &in_max,
   return ( x - in_min ) * ( out_max - out_min ) / ( in_max - in_min ) + out_min;
 }
 
+inline float invertFloat( const float &x, const float &out_min, const float &out_max) {
+  return (1.0f - ( x - out_min ) / ( out_max - out_min )) * ( out_max - out_min ) + out_min;
+}
+
 // https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
 // chapter 3.1.2
 const char * resetStr[] =
